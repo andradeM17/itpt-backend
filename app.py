@@ -1,4 +1,4 @@
-from flask import Flask, request, send_file
+from flask import Flask, request, send_file, jsonify
 from flask_cors import CORS
 from tools.detector import detect_language
 from tools.splitter import split_sentences
@@ -7,6 +7,42 @@ import io
 
 app = Flask(__name__)
 CORS(app)
+
+# -----------------------------
+# NEW: Quick test endpoints
+# -----------------------------
+
+@app.route("/langdetect", methods=["GET"])
+def langdetect_route():
+    text = request.args.get("text", "")
+    if not text:
+        return jsonify({"error": "Missing ?text="}), 400
+    lang = detect_language(text)
+    return jsonify({"language": lang})
+
+
+@app.route("/split", methods=["GET"])
+def split_route():
+    text = request.args.get("text", "")
+    if not text:
+        return jsonify({"error": "Missing ?text="}), 400
+    sentences = split_sentences(text)
+    return jsonify({"sentences": sentences})
+
+
+@app.route("/align", methods=["GET"])
+def align_route():
+    src = request.args.get("src", "")
+    tgt = request.args.get("tgt", "")
+    if not src or not tgt:
+        return jsonify({"error": "Missing ?src= and/or ?tgt="}), 400
+    alignment = align_sentences(src, tgt)
+    return jsonify({"alignment": alignment})
+
+
+# -----------------------------
+# Your existing /process endpoint
+# -----------------------------
 
 @app.route("/process", methods=["POST"])
 def process():
