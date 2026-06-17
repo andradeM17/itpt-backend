@@ -81,9 +81,11 @@ def process():
 
         if format == "tmx":
             output_text = generate_tmx(alignment)
+            mimetype = "application/xml"
             filename = "alignment.tmx"
         else:
             output_text = generate_csv(alignment)
+            mimetype = "text/csv"
             filename = "alignment.csv"
 
         return Response(
