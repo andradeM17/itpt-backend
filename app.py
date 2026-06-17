@@ -1,8 +1,10 @@
-from flask import Flask, request, send_file, jsonify
+from flask import Flask, request, send_file, jsonify, Response
 from flask_cors import CORS
 from tools.detector import detect_language
 from tools.splitter import split_sentences
 from tools.aligner import align_sentences
+from tools.csv_generator import generate_csv
+from tools.tmx_generator import generate_tmx
 import io
 
 app = Flask(__name__)
@@ -47,6 +49,7 @@ def align_route():
 @app.route("/process", methods=["POST"])
 def process():
     mode = request.form.get("mode")
+    format = request.form.get("format", "csv")
     file1 = request.files["file1"]
     text1 = file1.read().decode("utf-8")
 
@@ -76,19 +79,17 @@ def process():
 
         alignment = align_sentences(text1, text2)
 
-        lines = []
-        for pair in alignment:
-            lines.append(f"SRC: {pair['source']}")
-            lines.append(f"TGT: {pair['target']}")
-            lines.append("")
+        if format == "tmx":
+            output_text = generate_tmx(alignment)
+            filename = "alignment.tmx"
+        else:
+            output_text = generate_csv(alignment)
+            filename = "alignment.csv"
 
-        output = "\n".join(lines)
-
-        return send_file(
-            io.BytesIO(output.encode("utf-8")),
-            as_attachment=True,
-            download_name="alignment.txt",
-            mimetype="text/plain"
+        return Response(
+            output_text,
+            mimetype="text/plain",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
 
     else:
