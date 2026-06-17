@@ -63,8 +63,8 @@ def hunalign_alignment(src_sents, tgt_sents):
                 continue
 
             # Skip dummy 0→0 fallback
-            if src_idx == 0 and tgt_idx == 0:
-                continue
+            #if src_idx == 0 and tgt_idx == 0:
+            #    continue
 
             alignment.append({
                 "source": src_sents[src_idx] if 0 <= src_idx < len(src_sents) else "",
