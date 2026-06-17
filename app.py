@@ -78,9 +78,14 @@ def process():
 
         lines = []
         for pair in alignment:
-            lines.append(f"SRC: {pair['source']}")
-            lines.append(f"TGT: {pair['target']}")
-            lines.append("")
+            if pair["s_source"] and pair["s_target"]:
+                lines.append(f"SRC: {pair['s_source']}")
+                lines.append(f"TGT: {pair['s_target']}")
+                lines.append("")
+            else:
+                lines.append(f"SRC: {pair['h_source']}")
+                lines.append(f"TGT: {pair['h_target']}")
+                lines.append("")
 
         output = "\n".join(lines)
 
