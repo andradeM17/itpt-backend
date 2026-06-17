@@ -88,9 +88,10 @@ def process():
 
         return Response(
             output_text,
-            mimetype="text/plain",
+            mimetype=mimetype,
             headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
+
 
     else:
         return "Invalid mode", 400
