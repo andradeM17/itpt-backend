@@ -11,7 +11,7 @@ def process_bilingual_file(text):
     """
 
     # 1. Sentence split
-    sentences = text.splitlines()
+    sentences = split_sentences(text)
 
     # 2. Language detect each sentence
     EN_lines = []
