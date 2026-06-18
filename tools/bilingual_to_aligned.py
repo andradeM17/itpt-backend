@@ -41,10 +41,6 @@ def process_bilingual_file(text):
     )
 
     return {
-        "languages": {
-            "source": "en",
-            "target": "ga"
-        },
         "alignment": alignment,
         "failed_lines": other_lines
     }

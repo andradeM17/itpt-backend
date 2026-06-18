@@ -42,6 +42,44 @@ def align_route():
     alignment = align_sentences(src, tgt)
     return jsonify({"alignment": alignment})
 
+@app.route("/bilingualalign", methods=["GET"])
+def bilingual_align_route():
+    text = request.args.get("text", "")
+    format = request.args.get("format", "csv")
+    output = request.args.get("output", "alignment")  # alignment | failed
+
+    if not text.strip():
+        return "Error: Provide ?text=Your+text+here", 400
+
+    result = process_bilingual_file(text)
+
+    alignment = result["alignment"]
+    failed_lines = result["failed_lines"]
+
+    if output == "failed":
+        failed_text = "\n".join(failed_lines)
+        return Response(
+            failed_text,
+            mimetype="text/plain",
+            headers={"Content-Disposition": "attachment; filename=failed_lines.txt"}
+        )
+
+    # Otherwise return alignment
+    if format == "tmx":
+        output_text = generate_tmx(alignment)
+        mimetype = "application/xml"
+        filename = "bilingual_alignment.tmx"
+    else:
+        output_text = generate_csv(alignment)
+        mimetype = "text/csv"
+        filename = "bilingual_alignment.csv"
+
+    return Response(
+        output_text,
+        mimetype=mimetype,
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
 
 # -----------------------------
 # Your existing /process endpoint
@@ -97,26 +135,40 @@ def process():
     
     elif mode == "bilingual_to_aligned":
         text = file1.read().decode("utf-8")
-        alignment, lang_a, lang_b = process_bilingual_file(text)
+        result = process_bilingual_file(text)
 
-        # Choose output format
+        alignment = result["alignment"]
+        failed_lines = result["failed_lines"]
+
         format = request.form.get("format", "csv")
 
+        # --- MAIN OUTPUT (CSV or TMX) ---
         if format == "tmx":
-            output_text = generate_tmx(alignment, srclang=lang_a, tgtlang=lang_b)
-            mimetype = "application/xml"
+            output_text = generate_tmx(alignment)
             filename = "bilingual_alignment.tmx"
         else:
             output_text = generate_csv(alignment)
-            mimetype = "text/csv"
             filename = "bilingual_alignment.csv"
 
-        return Response(
-            output_text,
-            mimetype=mimetype,
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
-        )
+        # --- FAILED LINES OUTPUT ---
+        failed_text = "\n".join(failed_lines)
+        failed_filename = "failed_lines.txt"
 
+        # Return BOTH files as a ZIP
+        import io, zipfile
+        zip_buffer = io.BytesIO()
+
+        with zipfile.ZipFile(zip_buffer, "w") as z:
+            z.writestr(filename, output_text)
+            z.writestr(failed_filename, failed_text)
+
+        zip_buffer.seek(0)
+
+        return Response(
+            zip_buffer.getvalue(),
+            mimetype="application/zip",
+            headers={"Content-Disposition": "attachment; filename=bilingual_output.zip"}
+        )
 
 
     else:
