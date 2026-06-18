@@ -134,8 +134,7 @@ def process():
         )
     
     elif mode == "bilingual_to_aligned":
-        text = file1.read().decode("utf-8")
-        result = process_bilingual_file(text)
+        result = process_bilingual_file(text1)
 
         alignment = result["alignment"]
         failed_lines = result["failed_lines"]
