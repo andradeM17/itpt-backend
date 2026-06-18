@@ -5,6 +5,7 @@ from tools.splitter import split_sentences
 from tools.aligner import align_sentences
 from tools.csv_generator import generate_csv
 from tools.tmx_generator import generate_tmx
+from tools.bilingual_to_aligned import process_bilingual_file
 import io
 
 app = Flask(__name__)
@@ -93,6 +94,29 @@ def process():
             mimetype=mimetype,
             headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
+    
+    elif mode == "bilingual_to_aligned":
+        text = file1.read().decode("utf-8")
+        alignment, lang_a, lang_b = process_bilingual_file(text)
+
+        # Choose output format
+        format = request.form.get("format", "csv")
+
+        if format == "tmx":
+            output_text = generate_tmx(alignment, srclang=lang_a, tgtlang=lang_b)
+            mimetype = "application/xml"
+            filename = "bilingual_alignment.tmx"
+        else:
+            output_text = generate_csv(alignment)
+            mimetype = "text/csv"
+            filename = "bilingual_alignment.csv"
+
+        return Response(
+            output_text,
+            mimetype=mimetype,
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+
 
 
     else:
