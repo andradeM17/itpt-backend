@@ -6,7 +6,7 @@ from tools.aligner import align_sentences
 from tools.csv_generator import generate_csv
 from tools.tmx_generator import generate_tmx
 from tools.bilingual_to_aligned import process_bilingual_file
-import io
+import io, zipfile
 import tempfile
 import subprocess
 import os
@@ -233,7 +233,7 @@ def process():
         failed_filename = "failed_lines.txt"
 
         # Return BOTH files as a ZIP
-        import io, zipfile
+
         zip_buffer = io.BytesIO()
 
         with zipfile.ZipFile(zip_buffer, "w") as z:
