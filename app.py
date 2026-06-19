@@ -7,9 +7,56 @@ from tools.csv_generator import generate_csv
 from tools.tmx_generator import generate_tmx
 from tools.bilingual_to_aligned import process_bilingual_file
 import io
+import tempfile
+import subprocess
+import os
+
+LIBREOFFICE_PATH = "/usr/bin/libreoffice"   # adjust for your server
+PDFTOTEXT_PATH = "/usr/bin/pdftotext"       # adjust for your server
 
 app = Flask(__name__)
 CORS(app)
+
+
+def extract_text_from_uploaded_file(file_storage):
+    ext = file_storage.filename.lower().split(".")[-1]
+
+    # Save uploaded file to a temp location
+    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{ext}") as tmp_in:
+        file_storage.save(tmp_in.name)
+        input_path = tmp_in.name
+
+    # Output temp file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as tmp_out:
+        output_path = tmp_out.name
+
+    # Choose extractor
+    if ext in ["doc", "docx"]:
+        subprocess.run(
+            ["python", "tools/extractors/editable_text_extractor.py",
+             LIBREOFFICE_PATH, input_path, output_path],
+            check=True
+        )
+    elif ext == "pdf":
+        subprocess.run(
+            ["python", "tools/extractors/pdf_text_extractor.py",
+             PDFTOTEXT_PATH, input_path, output_path],
+            check=True
+        )
+    else:
+        # Not a special format → read normally
+        return file_storage.read().decode("utf-8")
+
+    # Read extracted text
+    with open(output_path, "r", encoding="utf-8") as f:
+        text = f.read()
+
+    # Clean up
+    os.remove(input_path)
+    os.remove(output_path)
+
+    return text
+
 
 # -----------------------------
 # NEW: Quick test endpoints
@@ -90,7 +137,8 @@ def process():
     mode = request.form.get("mode")
     format = request.form.get("format", "csv")
     file1 = request.files["file1"]
-    text1 = file1.read().decode("utf-8")
+    text1 = extract_text_from_uploaded_file(file1)
+
 
     if mode == "langdetect":
         lang = detect_language(text1)
@@ -114,7 +162,7 @@ def process():
 
     elif mode == "align":
         file2 = request.files["file2"]
-        text2 = file2.read().decode("utf-8")
+        text2 = extract_text_from_uploaded_file(file2)
 
         alignment = align_sentences(text1, text2)
 
