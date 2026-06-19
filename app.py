@@ -44,8 +44,10 @@ def extract_text_from_uploaded_file(file_storage):
             check=True
         )
     else:
-        # Not a special format → read normally
-        return file_storage.read().decode("utf-8")
+        # Read raw text BEFORE save() consumes the stream
+        file_storage.stream.seek(0)
+        return file_storage.stream.read().decode("utf-8")
+
 
     # Read extracted text
     with open(output_path, "r", encoding="utf-8") as f:
