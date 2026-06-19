@@ -3,3 +3,5 @@ flask-cors
 gunicorn
 langdetect
 nltk
+docx2txt
+PyMuPDF

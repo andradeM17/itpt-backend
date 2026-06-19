@@ -11,88 +11,91 @@ import tempfile
 import subprocess
 import os
 import logging
-import shutil
+import docx2txt
+import fitz
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-LIBREOFFICE_PATH = (
-    shutil.which("soffice")
-    or shutil.which("libreoffice")
-)    
-                                      
-PDFTOTEXT_PATH = (
-    shutil.which("pdftotext")
-)
-
 app = Flask(__name__)
 CORS(app)
 
-
 def extract_text_from_uploaded_file(file_storage):
     ext = file_storage.filename.lower().split(".")[-1]
-    logger.info(f"[EXTRACTOR] Uploaded file: {file_storage.filename}, ext={ext}")
 
-    # Read raw bytes BEFORE save()
+    logger.info(
+        f"[EXTRACTOR] Uploaded file: {file_storage.filename}, ext={ext}"
+    )
+
     file_storage.stream.seek(0)
     raw_bytes = file_storage.stream.read()
-    logger.info(f"[EXTRACTOR] Raw bytes length BEFORE save: {len(raw_bytes)}")
 
-    # If plain text, return immediately
+    logger.info(
+        f"[EXTRACTOR] Raw bytes length: {len(raw_bytes)}"
+    )
+
+    if not raw_bytes:
+        return ""
+
+    # TXT and other text files
     if ext not in ["doc", "docx", "pdf"]:
         try:
             text = raw_bytes.decode("utf-8")
-            logger.info(f"[EXTRACTOR] Plain text length: {len(text)}")
+            logger.info(
+                f"[EXTRACTOR] Plain text length: {len(text)}"
+            )
             return text
-        except Exception as e:
-            logger.error(f"[EXTRACTOR] UTF-8 decode failed: {e}")
-            return ""
+        except UnicodeDecodeError:
+            try:
+                return raw_bytes.decode("utf-8-sig")
+            except Exception:
+                return raw_bytes.decode(
+                    "latin-1",
+                    errors="ignore"
+                )
 
-    # Save to temp for external extractor
-    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{ext}") as tmp_in:
-        tmp_in.write(raw_bytes)
-        input_path = tmp_in.name
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as tmp_out:
-        output_path = tmp_out.name
-
-    logger.info(f"[EXTRACTOR] Saved temp input: {input_path}")
-    logger.info(f"[EXTRACTOR] Output path: {output_path}")
+    temp_path = None
 
     try:
-        if ext in ["doc", "docx"]:
-            logger.info("[EXTRACTOR] Running DOC/DOCX extractor")
-            subprocess.run(
-                ["python", "tools/extractors/editable_text_extractor.py",
-                 LIBREOFFICE_PATH, input_path, output_path],
-                check=True
-            )
+        with tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=f".{ext}"
+        ) as tmp:
+            tmp.write(raw_bytes)
+            temp_path = tmp.name
+
+        logger.info(
+            f"[EXTRACTOR] Temporary file: {temp_path}"
+        )
+
+        # DOCX
+        if ext == "docx":
+            text = docx2txt.process(temp_path)
+
+        # PDF
         elif ext == "pdf":
-            logger.info("[EXTRACTOR] Running PDF extractor")
-            subprocess.run(
-                ["python", "tools/extractors/pdf_text_extractor.py",
-                 PDFTOTEXT_PATH, input_path, output_path],
-                check=True
-            )
+            doc = fitz.open(temp_path)
+            text = ""
+            for page in doc:
+                text += page.get_text()
+
+
+        logger.info(
+            f"[EXTRACTOR] Extracted text length: {len(text)}"
+        )
+
+        return text
+
     except Exception as e:
-        logger.error(f"[EXTRACTOR] Extractor failed: {e}")
+        logger.exception(
+            f"[EXTRACTOR] Extraction failed: {e}"
+        )
         return ""
 
-    # Read extracted text
-    try:
-        with open(output_path, "r", encoding="utf-8") as f:
-            text = f.read()
-        logger.info(f"[EXTRACTOR] Extracted text length: {len(text)}")
-    except Exception as e:
-        logger.error(f"[EXTRACTOR] Failed to read extracted text: {e}")
-        text = ""
-
-    # Cleanup
-    os.remove(input_path)
-    os.remove(output_path)
-
-    return text
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
 
 
 # -----------------------------
