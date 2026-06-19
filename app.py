@@ -168,7 +168,8 @@ def process():
     format = request.form.get("format", "csv")
     file1 = request.files["file1"]
     text1 = extract_text_from_uploaded_file(file1)
-
+    logger.info(f"[PROCESS] Mode={mode}, text1 length={len(text1)}")
+    logger.info(f"[PROCESS] First 200 chars: {text1[:200]!r}")
 
     if mode == "langdetect":
         lang = detect_language(text1)
