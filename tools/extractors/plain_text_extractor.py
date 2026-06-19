@@ -1,8 +1,8 @@
 import logging
 import shutil
 
-from toolchain.extractors.extraction_error import ExtractionError
-from toolchain.extractors.text_extractor import TextExtractor
+from tools.extractors.extraction_error import ExtractionError
+from tools.extractors.text_extractor import TextExtractor
 
 logger = logging.getLogger(__name__)
 

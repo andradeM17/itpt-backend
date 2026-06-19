@@ -1,4 +1,5 @@
-from toolchain.common.toolchain_error import ToolchainError
+class ToolchainError(Exception):
+    pass
 
 class ExtractionError(ToolchainError):
     pass
