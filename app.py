@@ -21,16 +21,22 @@ CORS(app)
 def extract_text_from_uploaded_file(file_storage):
     ext = file_storage.filename.lower().split(".")[-1]
 
-    # Save uploaded file to a temp location
+    # Read raw text BEFORE save() consumes the stream
+    file_storage.stream.seek(0)
+    raw_bytes = file_storage.stream.read()
+
+    # If it's a plain text file, return immediately
+    if ext not in ["doc", "docx", "pdf"]:
+        return raw_bytes.decode("utf-8")
+
+    # Otherwise save to temp for external extractor
     with tempfile.NamedTemporaryFile(delete=False, suffix=f".{ext}") as tmp_in:
-        file_storage.save(tmp_in.name)
+        tmp_in.write(raw_bytes)
         input_path = tmp_in.name
 
-    # Output temp file
     with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as tmp_out:
         output_path = tmp_out.name
 
-    # Choose extractor
     if ext in ["doc", "docx"]:
         subprocess.run(
             ["python", "tools/extractors/editable_text_extractor.py",
@@ -43,17 +49,10 @@ def extract_text_from_uploaded_file(file_storage):
              PDFTOTEXT_PATH, input_path, output_path],
             check=True
         )
-    else:
-        # Read raw text BEFORE save() consumes the stream
-        file_storage.stream.seek(0)
-        return file_storage.stream.read().decode("utf-8")
 
-
-    # Read extracted text
     with open(output_path, "r", encoding="utf-8") as f:
         text = f.read()
 
-    # Clean up
     os.remove(input_path)
     os.remove(output_path)
 
