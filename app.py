@@ -11,13 +11,20 @@ import tempfile
 import subprocess
 import os
 import logging
+import shutil
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-LIBREOFFICE_PATH = "/usr/bin/libreoffice"   # adjust for your server
-PDFTOTEXT_PATH = "/usr/bin/pdftotext"       # adjust for your server
+LIBREOFFICE_PATH = (
+    shutil.which("soffice")
+    or shutil.which("libreoffice")
+)    
+                                      
+PDFTOTEXT_PATH = (
+    shutil.which("pdftotext")
+)
 
 app = Flask(__name__)
 CORS(app)
