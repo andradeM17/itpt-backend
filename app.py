@@ -10,6 +10,11 @@ import io
 import tempfile
 import subprocess
 import os
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 LIBREOFFICE_PATH = "/usr/bin/libreoffice"   # adjust for your server
 PDFTOTEXT_PATH = "/usr/bin/pdftotext"       # adjust for your server
@@ -20,16 +25,24 @@ CORS(app)
 
 def extract_text_from_uploaded_file(file_storage):
     ext = file_storage.filename.lower().split(".")[-1]
+    logger.info(f"[EXTRACTOR] Uploaded file: {file_storage.filename}, ext={ext}")
 
-    # Read raw text BEFORE save() consumes the stream
+    # Read raw bytes BEFORE save()
     file_storage.stream.seek(0)
     raw_bytes = file_storage.stream.read()
+    logger.info(f"[EXTRACTOR] Raw bytes length BEFORE save: {len(raw_bytes)}")
 
-    # If it's a plain text file, return immediately
+    # If plain text, return immediately
     if ext not in ["doc", "docx", "pdf"]:
-        return raw_bytes.decode("utf-8")
+        try:
+            text = raw_bytes.decode("utf-8")
+            logger.info(f"[EXTRACTOR] Plain text length: {len(text)}")
+            return text
+        except Exception as e:
+            logger.error(f"[EXTRACTOR] UTF-8 decode failed: {e}")
+            return ""
 
-    # Otherwise save to temp for external extractor
+    # Save to temp for external extractor
     with tempfile.NamedTemporaryFile(delete=False, suffix=f".{ext}") as tmp_in:
         tmp_in.write(raw_bytes)
         input_path = tmp_in.name
@@ -37,22 +50,38 @@ def extract_text_from_uploaded_file(file_storage):
     with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as tmp_out:
         output_path = tmp_out.name
 
-    if ext in ["doc", "docx"]:
-        subprocess.run(
-            ["python", "tools/extractors/editable_text_extractor.py",
-             LIBREOFFICE_PATH, input_path, output_path],
-            check=True
-        )
-    elif ext == "pdf":
-        subprocess.run(
-            ["python", "tools/extractors/pdf_text_extractor.py",
-             PDFTOTEXT_PATH, input_path, output_path],
-            check=True
-        )
+    logger.info(f"[EXTRACTOR] Saved temp input: {input_path}")
+    logger.info(f"[EXTRACTOR] Output path: {output_path}")
 
-    with open(output_path, "r", encoding="utf-8") as f:
-        text = f.read()
+    try:
+        if ext in ["doc", "docx"]:
+            logger.info("[EXTRACTOR] Running DOC/DOCX extractor")
+            subprocess.run(
+                ["python", "tools/extractors/editable_text_extractor.py",
+                 LIBREOFFICE_PATH, input_path, output_path],
+                check=True
+            )
+        elif ext == "pdf":
+            logger.info("[EXTRACTOR] Running PDF extractor")
+            subprocess.run(
+                ["python", "tools/extractors/pdf_text_extractor.py",
+                 PDFTOTEXT_PATH, input_path, output_path],
+                check=True
+            )
+    except Exception as e:
+        logger.error(f"[EXTRACTOR] Extractor failed: {e}")
+        return ""
 
+    # Read extracted text
+    try:
+        with open(output_path, "r", encoding="utf-8") as f:
+            text = f.read()
+        logger.info(f"[EXTRACTOR] Extracted text length: {len(text)}")
+    except Exception as e:
+        logger.error(f"[EXTRACTOR] Failed to read extracted text: {e}")
+        text = ""
+
+    # Cleanup
     os.remove(input_path)
     os.remove(output_path)
 
