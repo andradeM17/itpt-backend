@@ -78,7 +78,7 @@ def extract_text_from_uploaded_file(file_storage):
             doc = fitz.open(temp_path)
             text = ""
             for page in doc:
-                text += page.get_text().replace("\n", " ")
+                text += page.get_text().replace("\n", "")
 
 
         logger.info(
