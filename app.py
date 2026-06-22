@@ -249,15 +249,11 @@ def process():
 
                 failed_text = "\n".join(failed_lines)
 
-                # Create per-file ZIP
-                file_zip_buffer = io.BytesIO()
-                with zipfile.ZipFile(file_zip_buffer, "w") as file_zip:
-                    file_zip.writestr(main_filename, output_text)
-                    file_zip.writestr("failed_lines.txt", failed_text)
+                # Add outputs directly to master ZIP (no nested ZIPs)
+                safe_name = os.path.splitext(f.filename)[0]
 
-                # Add per-file ZIP to master ZIP
-                file_zip_buffer.seek(0)
-                master_zip.writestr(f"{f.filename}_output.zip", file_zip_buffer.read())
+                master_zip.writestr(f"{safe_name}_alignment.{ 'tmx' if format=='tmx' else 'csv' }", output_text)
+                master_zip.writestr(f"{safe_name}_failed_lines.txt", failed_text)
 
         master_zip_buffer.seek(0)
 
