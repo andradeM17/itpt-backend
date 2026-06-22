@@ -223,39 +223,48 @@ def process():
         )
     
     elif mode == "bilingual_to_aligned":
-        result = process_bilingual_file(text1)
-
-        alignment = result["alignment"]
-        failed_lines = result["failed_lines"]
-
+        files = request.files.getlist("file1")
         format = request.form.get("format", "csv")
 
-        # --- MAIN OUTPUT (CSV or TMX) ---
-        if format == "tmx":
-            output_text = generate_tmx(alignment)
-            filename = "bilingual_alignment.tmx"
-        else:
-            output_text = generate_csv(alignment)
-            filename = "bilingual_alignment.csv"
+        master_zip_buffer = io.BytesIO()
 
-        # --- FAILED LINES OUTPUT ---
-        failed_text = "\n".join(failed_lines)
-        failed_filename = "failed_lines.txt"
+        with zipfile.ZipFile(master_zip_buffer, "w") as master_zip:
 
-        # Return BOTH files as a ZIP
+            for f in files:
+                logger.info(f"[BATCH] Processing file: {f.filename}")
 
-        zip_buffer = io.BytesIO()
+                text = extract_text_from_uploaded_file(f)
+                result = process_bilingual_file(text)
 
-        with zipfile.ZipFile(zip_buffer, "w") as z:
-            z.writestr(filename, output_text)
-            z.writestr(failed_filename, failed_text)
+                alignment = result["alignment"]
+                failed_lines = result["failed_lines"]
 
-        zip_buffer.seek(0)
+                # --- MAIN OUTPUT (CSV or TMX) ---
+                if format == "tmx":
+                    output_text = generate_tmx(alignment)
+                    main_filename = "bilingual_alignment.tmx"
+                else:
+                    output_text = generate_csv(alignment)
+                    main_filename = "bilingual_alignment.csv"
+
+                failed_text = "\n".join(failed_lines)
+
+                # Create per-file ZIP
+                file_zip_buffer = io.BytesIO()
+                with zipfile.ZipFile(file_zip_buffer, "w") as file_zip:
+                    file_zip.writestr(main_filename, output_text)
+                    file_zip.writestr("failed_lines.txt", failed_text)
+
+                # Add per-file ZIP to master ZIP
+                file_zip_buffer.seek(0)
+                master_zip.writestr(f"{f.filename}_output.zip", file_zip_buffer.read())
+
+        master_zip_buffer.seek(0)
 
         return Response(
-            zip_buffer.getvalue(),
+            master_zip_buffer.getvalue(),
             mimetype="application/zip",
-            headers={"Content-Disposition": "attachment; filename=bilingual_output.zip"}
+            headers={"Content-Disposition": "attachment; filename=batch_output.zip"}
         )
 
 
