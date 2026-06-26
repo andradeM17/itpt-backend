@@ -175,9 +175,13 @@ def bilingual_align_route():
 @app.route("/process", methods=["POST"])
 def process():
     mode = request.form.get("mode")
+    text_input = request.form.get("text_input", "").strip()
     format = request.form.get("format", "csv")
-    file1 = request.files["file1"]
-    text1 = extract_text_from_uploaded_file(file1)
+    if text_input:
+        text1 = text_input
+    else:
+        file1 = request.files["file1"]
+        text1 = extract_text_from_uploaded_file(file1)
     logger.info(f"[PROCESS] Mode={mode}, text1 length={len(text1)}")
     logger.info(f"[PROCESS] First 200 chars: {text1[:200]!r}")
 
