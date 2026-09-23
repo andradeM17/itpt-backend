@@ -12,7 +12,7 @@ import subprocess
 import os
 import logging
 import docx2txt
-import fitz
+import pymupdf
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ def extract_text_from_uploaded_file(file_storage):
 
         # PDF
         elif ext == "pdf":
-            doc = fitz.open(temp_path)
+            doc = pymupdf.open(temp_path)
             text = ""
             for page in doc:
                 text += page.get_text().replace("\n", "")
