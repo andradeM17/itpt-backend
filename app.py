@@ -76,7 +76,7 @@ def extract_text_from_uploaded_file(file_storage):
 
         # PPTX
         elif ext == "pptx":
-            text = pptx2txt2.process(temp_path)
+            text = pptx2txt2.extract_text(temp_path)
 
         # PDF
         elif ext == "pdf":
