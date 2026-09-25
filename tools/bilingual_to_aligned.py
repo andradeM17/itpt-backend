@@ -32,12 +32,14 @@ def process_bilingual_file(text):
             if line.strip():
                 other_lines.append(line)
 
+    print("[PROCESSOR] English lines:", len(EN_lines))
+    print("[PROCESSOR] Irish lines:", len(GA_lines))
+    print("[PROCESSOR] Failed lines:", len(other_lines))
 
-  
     # 3. Align using your existing aligner
     alignment = align_sentences(
-        "\n".join(EN_lines),
-        "\n".join(GA_lines)
+        "\r\n".join(EN_lines),
+        "\r\n".join(GA_lines)
     )
 
     return {

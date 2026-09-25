@@ -9,6 +9,7 @@ from tools.splitter import split_sentences
 def simple_alignment(src_sents, tgt_sents):
     alignment = []
     for src, tgt in zip_longest(src_sents, tgt_sents, fillvalue=""):
+        print("[ALIGNER] Aligning:", src, "<->", tgt)
         alignment.append({
             "source": src,
             "target": tgt
