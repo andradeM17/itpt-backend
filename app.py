@@ -13,6 +13,7 @@ import os
 import logging
 import docx2txt
 import pymupdf
+import pptx2txt2
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ def extract_text_from_uploaded_file(file_storage):
         return ""
 
     # TXT and other text files
-    if ext not in ["doc", "docx", "pdf"]:
+    if ext not in ["pptx", "docx", "pdf"]:
         try:
             text = raw_bytes.decode("utf-8")
             logger.info(
@@ -72,6 +73,10 @@ def extract_text_from_uploaded_file(file_storage):
         # DOCX
         if ext == "docx":
             text = docx2txt.process(temp_path)
+
+        # PPTX
+        elif ext == "pptx":
+            text = pptx2txt2.process(temp_path)
 
         # PDF
         elif ext == "pdf":

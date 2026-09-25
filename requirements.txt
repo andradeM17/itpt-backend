@@ -5,3 +5,4 @@ langdetect
 nltk
 docx2txt
 PyMuPDF
+pptx2txt2

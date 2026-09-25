@@ -1,4 +1,4 @@
-### WRITTEN BY CO-PILOT ###
+### README WRITTEN BY CO-PILOT ###
 
 
 # **README — Text Processing & Alignment API**
