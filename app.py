@@ -232,37 +232,36 @@ def process():
         )
     
     elif mode == "bilingual_to_aligned":
-        files = request.files.getlist("file1")
+        file = request.files["file1"]
         format = request.form.get("format", "csv")
 
         master_zip_buffer = io.BytesIO()
 
         with zipfile.ZipFile(master_zip_buffer, "w") as master_zip:
 
-            for f in files:
-                logger.info(f"[BATCH] Processing file: {f.filename}")
+            logger.info(f"[BATCH] Processing file: {file.filename}")
 
-                text = extract_text_from_uploaded_file(f)
-                result = process_bilingual_file(text)
+            text = extract_text_from_uploaded_file(file)
+            result = process_bilingual_file(text)
 
-                alignment = result["alignment"]
-                failed_lines = result["failed_lines"]
+            alignment = result["alignment"]
+            failed_lines = result["failed_lines"]
 
-                # --- MAIN OUTPUT (CSV or TMX) ---
-                if format == "tmx":
-                    output_text = generate_tmx(alignment)
-                    main_filename = "bilingual_alignment.tmx"
-                else:
-                    output_text = generate_csv(alignment)
-                    main_filename = "bilingual_alignment.csv"
+            # --- MAIN OUTPUT (CSV or TMX) ---
+            if format == "tmx":
+                output_text = generate_tmx(alignment)
+                main_filename = "bilingual_alignment.tmx"
+            else:
+                output_text = generate_csv(alignment)
+                main_filename = "bilingual_alignment.csv"
 
-                failed_text = "\n".join(failed_lines)
+            failed_text = "\n".join(failed_lines)
 
-                # Add outputs directly to master ZIP (no nested ZIPs)
-                safe_name = os.path.splitext(f.filename)[0]
+            # Add outputs directly to master ZIP (no nested ZIPs)
+            safe_name = os.path.splitext(file.filename)[0]
 
-                master_zip.writestr(f"{safe_name}_alignment.{ 'tmx' if format=='tmx' else 'csv' }", output_text)
-                master_zip.writestr(f"{safe_name}_failed_lines.txt", failed_text)
+            master_zip.writestr(f"{safe_name}_alignment.{ 'tmx' if format=='tmx' else 'csv' }", output_text)
+            master_zip.writestr(f"{safe_name}_failed_lines.txt", failed_text)
 
         master_zip_buffer.seek(0)
 
