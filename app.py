@@ -77,6 +77,7 @@ def extract_text_from_uploaded_file(file_storage):
         # PPTX
         elif ext == "pptx":
             text = pptx2txt2.extract_text(temp_path)
+            print(text)
 
         # PDF
         elif ext == "pdf":
@@ -232,17 +233,11 @@ def process():
         )
     
     elif mode == "bilingual_to_aligned":
-        file = request.files["file1"]
         format = request.form.get("format", "csv")
-
         master_zip_buffer = io.BytesIO()
 
         with zipfile.ZipFile(master_zip_buffer, "w") as master_zip:
-
-            logger.info(f"[BATCH] Processing file: {file.filename}")
-
-            text = extract_text_from_uploaded_file(file)
-            result = process_bilingual_file(text)
+            result = process_bilingual_file(text1)
 
             alignment = result["alignment"]
             failed_lines = result["failed_lines"]
@@ -250,15 +245,13 @@ def process():
             # --- MAIN OUTPUT (CSV or TMX) ---
             if format == "tmx":
                 output_text = generate_tmx(alignment)
-                main_filename = "bilingual_alignment.tmx"
             else:
                 output_text = generate_csv(alignment)
-                main_filename = "bilingual_alignment.csv"
 
             failed_text = "\n".join(failed_lines)
 
             # Add outputs directly to master ZIP (no nested ZIPs)
-            safe_name = os.path.splitext(file.filename)[0]
+            safe_name = os.path.splitext(file1.filename)[0]
 
             master_zip.writestr(f"{safe_name}_alignment.{ 'tmx' if format=='tmx' else 'csv' }", output_text)
             master_zip.writestr(f"{safe_name}_failed_lines.txt", failed_text)
