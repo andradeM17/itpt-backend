@@ -8,7 +8,7 @@ This project provides a Flask‑based API for text processing tasks including:
 - **Language detection**
 - **Sentence splitting**
 - **Sentence alignment**
-- **Bilingual mixed‑file alignment** (English ↔ Irish)
+- **Bilingual mixed‑file alignment** (English ↔ Gaeilge (Irish))
 - **CSV/TMX generation**
 - **Failed‑line extraction**
 
