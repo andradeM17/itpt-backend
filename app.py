@@ -77,7 +77,6 @@ def extract_text_from_uploaded_file(file_storage):
         # PPTX
         elif ext == "pptx":
             text = pptx2txt2.extract_text(temp_path)
-            print(text)
 
         # PDF
         elif ext == "pdf":
@@ -169,7 +168,7 @@ def bilingual_align_route():
 
     return Response(
         output_text,
-        mimetype=mimetype,
+        mimetype=f"{mimetype}; charset=utf-8",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
@@ -228,7 +227,7 @@ def process():
 
         return Response(
             output_text,
-            mimetype=mimetype,
+            mimetype=f"{mimetype}; charset=utf-8",
             headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
     
@@ -244,9 +243,9 @@ def process():
 
             # --- MAIN OUTPUT (CSV or TMX) ---
             if format == "tmx":
-                output_text = generate_tmx(alignment)
+                output_text = generate_tmx(alignment).encode("utf-8")
             else:
-                output_text = generate_csv(alignment)
+                output_text = generate_csv(alignment).encode("utf-8-sig")
 
             failed_text = "\n".join(failed_lines)
 
