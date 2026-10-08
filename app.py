@@ -37,7 +37,7 @@ def extract_text_from_uploaded_file(file_storage):
     )
 
     if not raw_bytes:
-        return ""
+        return "", ext
 
     # TXT and other text files
     if ext not in ["pptx", "docx", "pdf"]:
@@ -46,15 +46,15 @@ def extract_text_from_uploaded_file(file_storage):
             logger.info(
                 f"[EXTRACTOR] Plain text length: {len(text)}"
             )
-            return text
+            return text, ext
         except UnicodeDecodeError:
             try:
-                return raw_bytes.decode("utf-8-sig")
+                return raw_bytes.decode("utf-8-sig"), ext
             except Exception:
                 return raw_bytes.decode(
                     "latin-1",
                     errors="ignore"
-                )
+                ), ext
 
     temp_path = None
 
@@ -90,13 +90,13 @@ def extract_text_from_uploaded_file(file_storage):
             f"[EXTRACTOR] Extracted text length: {len(text)}"
         )
 
-        return text
+        return text, ext
 
     except Exception as e:
         logger.exception(
             f"[EXTRACTOR] Extraction failed: {e}"
         )
-        return ""
+        return "", ""
 
     finally:
         if temp_path and os.path.exists(temp_path):
@@ -184,9 +184,10 @@ def process():
     format = request.form.get("format", "csv")
     if text_input:
         text1 = text_input
+        ext = "txt"
     else:
         file1 = request.files["file1"]
-        text1 = extract_text_from_uploaded_file(file1)
+        text1, ext = extract_text_from_uploaded_file(file1)
     logger.info(f"[PROCESS] Mode={mode}, text1 length={len(text1)}")
     logger.info(f"[PROCESS] First 200 chars: {text1[:200]!r}")
 
@@ -201,7 +202,7 @@ def process():
         )
 
     elif mode == "split":
-        sentences = split_sentences(text1)
+        sentences = split_sentences(text1, ext)
         output = "\n".join(sentences)
         return send_file(
             io.BytesIO(output.encode("utf-8")),
@@ -212,9 +213,9 @@ def process():
 
     elif mode == "align":
         file2 = request.files["file2"]
-        text2 = extract_text_from_uploaded_file(file2)
+        text2, ext2 = extract_text_from_uploaded_file(file2)
 
-        alignment = align_sentences(text1, text2)
+        alignment = align_sentences(text1, text2, ext1=ext, ext2=ext2)
 
         if format == "tmx":
             output_text = generate_tmx(alignment)
@@ -236,7 +237,7 @@ def process():
         master_zip_buffer = io.BytesIO()
 
         with zipfile.ZipFile(master_zip_buffer, "w") as master_zip:
-            result = process_bilingual_file(text1)
+            result = process_bilingual_file(text1, ext=ext)
 
             alignment = result["alignment"]
             failed_lines = result["failed_lines"]

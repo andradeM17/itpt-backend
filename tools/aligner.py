@@ -82,9 +82,9 @@ def hunalign_alignment(src_sents, tgt_sents):
             os.remove(tgt_path)
 
 
-def align_sentences(src_text: str, tgt_text: str):
-    src_sents = split_sentences(src_text)
-    tgt_sents = split_sentences(tgt_text)
+def align_sentences(src_text: str, tgt_text: str, ext1: str = "txt", ext2: str = "txt"):
+    src_sents = split_sentences(src_text, ext1)
+    tgt_sents = split_sentences(tgt_text, ext2)
 
     if platform.system() == "Windows":
         return simple_alignment(src_sents, tgt_sents)

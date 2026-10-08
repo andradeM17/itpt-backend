@@ -3,7 +3,7 @@ from tools.detector import detect_language
 from tools.aligner import align_sentences
 from tools.langdetect import LangDetectException
 
-def process_bilingual_file(text):
+def process_bilingual_file(text, ext: str = "txt"):
     """
     Takes a single file containing two languages (Hard-coded as English and Irish) mixed line-by-line.
     Splits into sentences, detects language, groups by language,
@@ -11,7 +11,7 @@ def process_bilingual_file(text):
     """
 
     # 1. Sentence split
-    sentences = split_sentences(text)
+    sentences = split_sentences(text, ext)
 
     # 2. Language detect each sentence
     EN_lines = []

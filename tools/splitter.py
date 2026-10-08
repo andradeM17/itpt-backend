@@ -2,8 +2,11 @@ import nltk
 #nltk.download("punkt", quiet=True)
 nltk.download("punkt_tab", quiet=True)
 
-def split_sentences(text: str):
-    chunks = text.split("\r\n")
+def split_sentences(text: str, ext: str):
+    if ext.lower() in ["txt"]:
+        chunks = text.splitlines()
+    else:
+        chunks = text.split("\r\n")
     sentences = []
 
     for chunk in chunks:

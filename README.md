@@ -177,7 +177,7 @@ Plain text file containing one line per failed detection.
 ## **Running the Server**
 
 ```
-pip install -r requirements.py
+pip install -r requirements.txt
 python app.py
 ```
 
